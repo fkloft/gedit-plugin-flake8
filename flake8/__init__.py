@@ -182,8 +182,8 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
                     stdout=subprocess.PIPE,
                     universal_newlines=True,
                 )
-            except FileNotFoundError:
-                warnings.warn("flake8 could not be found in $PATH")
+            except FileNotFoundError as e:
+                warnings.warn("flake8 could not be found in $PATH: " + str(e))
                 return
         
         data = ""
