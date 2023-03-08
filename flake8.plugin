@@ -1,0 +1,7 @@
+[Plugin]
+Module=flake8
+Loader=python3
+IAge=3
+Name=flake8
+Description=Checks python code with flake8
+Authors=Felix Kloft
