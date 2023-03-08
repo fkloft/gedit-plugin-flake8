@@ -16,10 +16,9 @@ class GutterRenderer(GtkSource.GutterRenderer):
         self.view = view
         
         self.set_size(8)
-        self.set_padding(3, 0)
+        # self.set_padding(3, 0)
         
         self.file_context = {}
-        self.tooltip_line = 0
     
     def do_draw(self, cr, bg_area, cell_area, start, end, state):
         GtkSource.GutterRenderer.do_draw(self, cr, bg_area, cell_area, start, end, state)
@@ -33,7 +32,7 @@ class GutterRenderer(GtkSource.GutterRenderer):
         if not messages:
             return
         
-        level = sorted(m["level"] for m in messages)[-1]  # highest level
+        level = max(m["level"] for m in messages)
         
         background = Gdk.RGBA()
         background.parse(level.color)
@@ -45,15 +44,11 @@ class GutterRenderer(GtkSource.GutterRenderer):
         line = it.get_line() + 1
         
         if not self.view.context_data:
-            self.tooltip_line = 0
             return False
         
         messages = self.view.context_data.get(line, None)
         if not messages:
-            self.tooltip_line = 0
             return False
-        
-        self.tooltip_line = line
         
         text = "\n".join(
             TOOLTIP_TEMPLATE.format(

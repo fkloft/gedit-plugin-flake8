@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import warnings
 
 from .gutterrenderer import GutterRenderer
 
@@ -20,7 +21,7 @@ from gi.repository import GObject, Gedit, GLib, GtkSource, Gtk, Pango, PeasGtk, 
 @functools.total_ordering
 class Level(enum.Enum):
     WARN = ("W", "#FFFF00")
-    ERROR = ("E", "#FF0000")
+    ERROR = ("E", "#FF0000") 
     UNKNOWN = ("?", "#FF7F00")
     
     def __lt__(self, other):
@@ -131,7 +132,7 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
             return
         
         if not self.connected:
-            self.gutter.insert(self.gutter_renderer, 40)
+            self.gutter.insert(self.gutter_renderer, 60)
             self.buffer_signals.append(self.buffer.connect('changed', self.update))
             self.connected = True
             self.update()
@@ -173,13 +174,17 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
             fd.flush()
             fd.seek(0)
             
-            proc = subprocess.Popen(
-                ("flake8", "-"),
-                cwd=folder,
-                stdin=fd,
-                stdout=subprocess.PIPE,
-                universal_newlines=True,
-            )
+            try:
+                proc = subprocess.Popen(
+                    ("flake8", "-"),
+                    cwd=folder,
+                    stdin=fd,
+                    stdout=subprocess.PIPE,
+                    universal_newlines=True,
+                )
+            except FileNotFoundError:
+                warnings.warn("flake8 could not be found in $PATH")
+                return
         
         data = ""
         
