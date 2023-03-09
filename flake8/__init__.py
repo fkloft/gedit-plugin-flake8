@@ -252,7 +252,7 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
                 flags=re.I,
             )
             if not match:
-                print("Unknown line:", repr(line), file=sys.stderr)
+                print("Unknown line from flake8:", repr(line), file=sys.stderr)
                 continue
             
             error = match.groupdict()
