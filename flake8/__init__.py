@@ -16,12 +16,14 @@ gi.require_version('Gtk', '3.0')
 
 from gi.repository import GObject, Gedit, GLib, GtkSource, Gtk, Pango, PeasGtk, Gio  # noqa
 
+PROJECT_FILES = ("setup.cfg", "tox.ini", ".flake8", "pyproject.toml")
+
 
 @enum.unique
 @functools.total_ordering
 class Level(enum.Enum):
     WARN = ("W", "#FFFF00")
-    ERROR = ("E", "#FF0000") 
+    ERROR = ("E", "#FF0000")
     UNKNOWN = ("?", "#FF7F00")
     
     def __lt__(self, other):
@@ -56,6 +58,7 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
         self.update_timeout = 0
         self.parse_signal = 0
         self.connected = False
+        self.location = None
     
     def do_activate(self):
         self.gutter_renderer = GutterRenderer(self)
@@ -122,20 +125,51 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
         return False
     
     def update_location(self, *unused):
+        old_location = self.location
         self.location = self.buffer.get_file().get_location()
         
         if not self.should_check():
-            if self.connected:
-                self.gutter.remove(self.gutter_renderer)
-                self.buffer.disconnect(self.buffer_signals.pop())
-                self.connected = False
+            self.disconnect_gutter()
             return
         
+        try:
+            if (not old_location) or not self.location.equal(old_location):
+                self.project_folder = self.find_project_folder()
+        except FileNotFoundError:
+            self.disconnect_gutter()
+        else:
+            self.connect_gutter()
+    
+    def find_project_folder(self):
+        if not self.location.has_parent():
+            raise FileNotFoundError("File has no parent")
+        
+        folder = self.location
+        while folder.has_parent():
+            folder = folder.get_parent()
+            
+            for filename in PROJECT_FILES:
+                if folder.get_child(filename).query_exists():
+                    return folder
+        
+        return self.location.get_parent()
+    
+    def disconnect_gutter(self):
         if not self.connected:
-            self.gutter.insert(self.gutter_renderer, 60)
-            self.buffer_signals.append(self.buffer.connect('changed', self.update))
-            self.connected = True
-            self.update()
+            return
+        
+        self.gutter.remove(self.gutter_renderer)
+        self.buffer.disconnect(self.buffer_signals.pop())
+        self.connected = False
+    
+    def connect_gutter(self):
+        if self.connected:
+            return
+        
+        self.gutter.insert(self.gutter_renderer, 60)
+        self.buffer_signals.append(self.buffer.connect('changed', self.update))
+        self.connected = True
+        self.update()
     
     def update(self, *unused):
         # We don't let the delay accumulate
@@ -166,7 +200,6 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
         if not self.buffer:
             self.context_data = {}
         
-        folder = self.location.get_parent().get_path()
         text = self.buffer.get_text(self.buffer.get_start_iter(), self.buffer.get_end_iter(), True)
         
         with tempfile.TemporaryFile("w+t") as fd:
@@ -177,7 +210,7 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
             try:
                 proc = subprocess.Popen(
                     ("flake8", "-"),
-                    cwd=folder,
+                    cwd=self.project_folder.get_path(),
                     stdin=fd,
                     stdout=subprocess.PIPE,
                     universal_newlines=True,
