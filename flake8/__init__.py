@@ -139,6 +139,7 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
             self.disconnect_gutter()
         else:
             self.connect_gutter()
+            self.update()
     
     def find_project_folder(self):
         if not self.location.has_parent():
@@ -169,7 +170,6 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
         self.gutter.insert(self.gutter_renderer, 60)
         self.buffer_signals.append(self.buffer.connect('changed', self.update))
         self.connected = True
-        self.update()
     
     def update(self, *unused):
         # We don't let the delay accumulate
@@ -178,9 +178,6 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
         if self.parse_signal != 0:
             GLib.source_remove(self.parse_signal)
             self.parse_signal = 0
-        
-        if self.connected:
-            self.update_location()
         
         # Do the initial diff without a delay
         if not self.context_data:
