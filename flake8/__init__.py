@@ -22,6 +22,7 @@ PROJECT_FILES = ("setup.cfg", "tox.ini", ".flake8", "pyproject.toml")
 @enum.unique
 @functools.total_ordering
 class Level(enum.Enum):
+    FLAKE8 = ("F", "#FFFF00")
     WARN = ("W", "#FFFF00")
     ERROR = ("E", "#FF0000")
     UNKNOWN = ("?", "#FF7F00")
