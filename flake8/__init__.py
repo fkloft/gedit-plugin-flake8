@@ -67,6 +67,8 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
         
         self.view_signals = [
             self.view.connect('notify::buffer', self.on_notify_buffer),
+            self.view.connect('notify::show-right-margin', self.update),
+            self.view.connect('notify::right-margin-position', self.update),
         ]
         
         self.buffer = None
@@ -173,6 +175,9 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
         self.connected = True
     
     def update(self, *unused):
+        if not self.connected:
+            return
+        
         # We don't let the delay accumulate
         if self.update_timeout != 0:
             return
@@ -205,9 +210,17 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
             fd.flush()
             fd.seek(0)
             
+            args = ["flake8"]
+            
+            if self.view.get_property("show-right-margin"):
+                pos = self.view.get_property("right-margin-position")
+                args.append(f"--max-line-length={pos}")
+            
+            args.append("-")
+            
             try:
                 proc = subprocess.Popen(
-                    ("flake8", "-"),
+                    args,
                     cwd=self.project_folder.get_path(),
                     stdin=fd,
                     stdout=subprocess.PIPE,
