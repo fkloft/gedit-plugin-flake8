@@ -265,7 +265,7 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
         
         for line in lines:
             match = re.match(
-                r"stdin:(?P<line>\d+):(?P<column>\d+):\s+(?P<class>[A-Z])(?P<error>\d+)\s+(?P<message>.*$)",
+                r"stdin:(?P<line>\d+):(?P<column>\d+):\s+(?P<class>[A-Z]+)(?P<error>\d+)\s+(?P<message>.*$)",
                 line,
                 flags=re.I,
             )
