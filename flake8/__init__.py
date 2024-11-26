@@ -112,13 +112,13 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
         
         self.buffer = view.get_buffer()
         
-        # The changed signal is connected to in update_location().
+        # The changed signal is connected to in _update_location().
         self.buffer_signals = [
-            self.buffer.connect('saved', self.update_location),
-            self.buffer.connect('loaded', self.update_location),
-            self.buffer.connect('notify::language', self.update_location),
+            self.buffer.connect('saved', self._update_location),
+            self.buffer.connect('loaded', self._update_location),
+            self.buffer.connect('notify::language', self._update_location),
         ]
-        self.update_location()
+        self._update_location()
     
     def should_check(self):
         if self.location is None:
@@ -129,7 +129,7 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
         
         return False
     
-    def update_location(self, *unused):
+    def _update_location(self, *unused):
         old_location = self.location
         self.location = self.buffer.get_file().get_location()
         
