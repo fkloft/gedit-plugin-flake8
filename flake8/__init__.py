@@ -204,6 +204,9 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
         if not self.buffer:
             self.context_data = {}
         
+        if not self.project_folder:
+            return
+        
         text = self.buffer.get_text(self.buffer.get_start_iter(), self.buffer.get_end_iter(), True)
         
         with tempfile.TemporaryFile("w+t") as fd:
@@ -218,9 +221,6 @@ class Flake8ViewActivatable(GObject.Object, Gedit.ViewActivatable):
                 args.append(f"--max-line-length={pos}")
             
             args.append("-")
-            
-            if not self.project_folder:
-                return
             
             try:
                 proc = subprocess.Popen(
